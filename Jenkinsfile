@@ -1,14 +1,11 @@
 node {
-    
-	
-
     env.AWS_ECR_LOGIN=true
     def newApp
-    def registry = 'gustavoapolinario/microservices-node-todo-frontend'
+    def registry = 'frenzy669/assaf-todo'
     def registryCredential = 'dockerhub'
 	
 	stage('Git') {
-		git 'https://github.com/gustavoapolinario/node-todo-frontend'
+		git 'https://github.com/AssafShaikevich/todoapp.git'
 	}
 	stage('Build') {
 		sh 'npm install'
@@ -31,6 +28,5 @@ node {
     stage('Removing image') {
         sh "docker rmi $registry:$BUILD_NUMBER"
         sh "docker rmi $registry:latest"
-    }
-    
+    }   
 }
