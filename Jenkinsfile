@@ -1,23 +1,29 @@
 node {
-    def newApp
-    def registry = 'https://registry-1.docker.io/v2/'
-	def imagename = "frenzy669/assaftodo"
-    def registryCredential = 'dockerhub'
-	
-	stage('Git') {
-		git 'https://github.com/AssafShaikevich/todoapp.git'
-	}
-	stage('Build') {
-		sh 'npm install'
-	}
-	stage('Test') {
-		sh 'npm test'
-	}
-	stage('Building image') {
-        docker.withRegistry( registry, registryCredential ) {
-		    def buildName = imagename + ":$BUILD_NUMBER"
-			newApp = docker.build(buildName)
-			newApp.push();
-        }
-	}
-}
+   def commit_id
+   stage('step a') {
+     checkout scm
+     sh "git rev-parse --short HEAD > .git/commit-id"                        
+     commit_id = readFile('.git/commit-id').trim()
+   }
+   stage('test') {
+     nodejs(nodeJSInstallationName: 'nodejs') {
+      sh label: '', script: '''
+      cd basics
+      npm install --only=dev
+      npm test 
+      '''
+     }
+   }
+   stage('docker build/push') {
+     docker.withRegistry('https://index.docker.io/v1/', 'frenzy669') {
+       def app = docker.build("frenzy669/docker-nodejs-demo:assaf-${commit_id}", 'basics').push()
+     }
+   }
+   stage('docker run') {
+     sh label: '', script: """
+      docker run --rm -tid --name docker_test -p 3000 frenzy669/docker-nodejs-demo:assaf-${commit_id}
+      docker kill docker_test
+      """
+     }
+   }
+
